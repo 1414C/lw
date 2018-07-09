@@ -3,6 +3,8 @@ package lw
 import (
 	"fmt"
 	"log"
+	"runtime"
+	"strconv"
 )
 
 // Logger is a logging interface
@@ -53,11 +55,11 @@ func (l *LogWriter) Log(s string, i ...interface{}) (int, error) {
 func (l *LogWriter) Info(s string, i ...interface{}) {
 	if l.InfoEnabled {
 		m := fmt.Sprintf(s, i...)
-		// _, f, line, ok := runtime.Caller(1)
-		// if ok {
-		// 	log.Println(f + " " + strconv.Itoa(line) + " " + m)
-		// 	return
-		// }
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			return
+		}
 		log.Println(m)
 	}
 }
