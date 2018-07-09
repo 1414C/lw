@@ -6,6 +6,6 @@
 
 ### Todo items
 
-- [ ] INFO, WARNING, ERROR, FATAL, SUCCESS
+- [ ] INFO, WARNING, ERROR, FATAL, SUCCESS, REQUEST
 - [ ] look at standard log formats
 - [ ] design to hookup easily to `https://goaccess.io`
