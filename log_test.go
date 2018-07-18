@@ -22,6 +22,18 @@ func TestInfo(t *testing.T) {
 	}
 }
 
+func TestTrace(t *testing.T) {
+	l := LogWriter{}
+	l.TraceEnabled = true
+	var d time.Duration
+	for i := 0; i < 10; i++ {
+		start := time.Now()
+		l.Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		d = time.Since(start)
+		log.Println("Active trace message with 2 vars took:", d)
+	}
+}
+
 func TestWarningEnabled(t *testing.T) {
 	l := LogWriter{}
 	l.WarningEnabled = true

@@ -68,7 +68,13 @@ func (l *LogWriter) Info(s string, i ...interface{}) {
 func (l *LogWriter) Trace(s string, i ...interface{}) {
 	if l.TraceEnabled {
 		m := fmt.Sprintf(s, i...)
-		log.Println(m)
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			log.Println("TRACE: " + f + " line:" + strconv.Itoa(line) + " -> " + m)
+			// log.Println("TRACE:   -> ", m)
+			return
+		}
+		log.Println("TRACE: no runtime info:", m)
 	}
 }
 
