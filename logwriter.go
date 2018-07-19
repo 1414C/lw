@@ -9,7 +9,7 @@ import (
 
 // Logger is a logging interface
 type Logger interface {
-	Enable()
+	Enable(withLoc bool)
 	Disable()
 	Info(string, ...interface{})
 	Trace(string, ...interface{})
@@ -23,8 +23,9 @@ type Logger interface {
 // LogWriter is a logging struct implementing Logger
 type LogWriter struct {
 	Enabled        bool
-	InfoEnabled    bool
+	LocEnabled     bool
 	TraceEnabled   bool
+	InfoEnabled    bool
 	WarningEnabled bool
 	DebugEnabled   bool
 	ErrorEnabled   bool
@@ -33,13 +34,15 @@ type LogWriter struct {
 }
 
 // Enable the LogWriter globally
-func (l *LogWriter) Enable() {
+func (l *LogWriter) Enable(withLoc bool) {
 	l.Enabled = true
+	l.LocEnabled = withLoc
 }
 
 // Disable the LogWriter globally
 func (l *LogWriter) Disable() {
 	l.Enabled = false
+	l.LocEnabled = false
 }
 
 // Log accepts a Printf-style set of arguments
@@ -57,7 +60,11 @@ func (l *LogWriter) Info(s string, i ...interface{}) {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			if l.LocEnabled {
+				log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				return
+			}
+			log.Println("INFO: ", m)
 			return
 		}
 		log.Println(m)
@@ -70,11 +77,11 @@ func (l *LogWriter) Trace(s string, i ...interface{}) {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("TRACE: " + f + " line:" + strconv.Itoa(line) + " -> " + m)
-			// log.Println("TRACE:   -> ", m)
+			log.Println("TRACE: " + f + " line:" + strconv.Itoa(line) + " " + m)
 			return
 		}
-		log.Println("TRACE: no runtime info:", m)
+		log.Println("TRACE: ", m)
+		return
 	}
 }
 
