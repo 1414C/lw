@@ -58,16 +58,14 @@ func (l *LogWriter) Log(s string, i ...interface{}) (int, error) {
 func (l *LogWriter) Info(s string, i ...interface{}) {
 	if l.InfoEnabled {
 		m := fmt.Sprintf(s, i...)
-		_, f, line, ok := runtime.Caller(1)
-		if ok {
-			if l.LocEnabled {
+		if l.LocEnabled {
+			_, f, line, ok := runtime.Caller(1)
+			if ok {
 				log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
 				return
 			}
-			log.Println("INFO: ", m)
-			return
 		}
-		log.Println(m)
+		log.Println("INFO:", m)
 	}
 }
 
@@ -81,7 +79,6 @@ func (l *LogWriter) Trace(s string, i ...interface{}) {
 			return
 		}
 		log.Println("TRACE: ", m)
-		return
 	}
 }
 
@@ -89,7 +86,14 @@ func (l *LogWriter) Trace(s string, i ...interface{}) {
 func (l *LogWriter) Warning(s string, i ...interface{}) {
 	if l.WarningEnabled {
 		m := fmt.Sprintf(s, i...)
-		log.Println(m)
+		if l.LocEnabled {
+			_, f, line, ok := runtime.Caller(1)
+			if ok {
+				log.Println("WARNING: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				return
+			}
+		}
+		log.Println("WARNING:", m)
 	}
 }
 
@@ -97,7 +101,12 @@ func (l *LogWriter) Warning(s string, i ...interface{}) {
 func (l *LogWriter) Debug(s string, i ...interface{}) {
 	if l.DebugEnabled {
 		m := fmt.Sprintf(s, i...)
-		log.Println(m)
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			log.Println("DEBUG: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			return
+		}
+		log.Println("DEBUG:", m)
 	}
 }
 
@@ -105,7 +114,12 @@ func (l *LogWriter) Debug(s string, i ...interface{}) {
 func (l *LogWriter) Error(s string, i ...interface{}) {
 	if l.ErrorEnabled {
 		m := fmt.Sprintf(s, i...)
-		log.Println(m)
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			log.Println("ERROR: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			return
+		}
+		log.Println("ERROR:", m)
 	}
 }
 
@@ -113,6 +127,11 @@ func (l *LogWriter) Error(s string, i ...interface{}) {
 func (l *LogWriter) Fatal(s string, i ...interface{}) {
 	if l.FatalEnabled {
 		m := fmt.Sprintf(s, i...)
-		log.Println(m)
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			log.Println("FATAL: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			return
+		}
+		log.Println("FATAL:", m)
 	}
 }
