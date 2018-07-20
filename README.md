@@ -12,3 +12,13 @@
 - [ ] consider an approach where message format can be specified (call location/line)
 
 Now update as 'static' implementation
+
+Private internal structure of enabled/disabled logging-types
+- LWEnable(withLoc)
+- LWDisable()
+- InfoEnable(bool)
+- WarningEnable(bool)
+- TraceEnable(bool)
+- DebugEnable(bool)
+- ErrorEnable(bool)
+- FatalEnable(bool)
