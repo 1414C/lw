@@ -26,14 +26,14 @@ type LogWriter struct {
 // LogWriterState is used to return the current status/state
 // of lw's config.
 type LogWriterState struct {
-	enabled        bool
-	locEnabled     bool
-	traceEnabled   bool
-	infoEnabled    bool
-	warningEnabled bool
-	debugEnabled   bool
-	errorEnabled   bool
-	fatalEnabled   bool
+	Enabled        bool
+	LocEnabled     bool
+	TraceEnabled   bool
+	InfoEnabled    bool
+	WarningEnabled bool
+	DebugEnabled   bool
+	ErrorEnabled   bool
+	FatalEnabled   bool
 }
 
 var logWriter LogWriter
@@ -60,14 +60,14 @@ func Enable(withLoc bool, w *io.Writer) {
 func InitWithSettings(s LogWriterState, w *io.Writer) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
-	logWriter.enabled = s.enabled
-	logWriter.locEnabled = s.locEnabled
-	logWriter.infoEnabled = s.infoEnabled
-	logWriter.warningEnabled = s.warningEnabled
-	logWriter.traceEnabled = s.traceEnabled
-	logWriter.debugEnabled = s.debugEnabled
-	logWriter.errorEnabled = s.errorEnabled
-	logWriter.fatalEnabled = s.fatalEnabled
+	logWriter.enabled = s.Enabled
+	logWriter.locEnabled = s.LocEnabled
+	logWriter.infoEnabled = s.InfoEnabled
+	logWriter.warningEnabled = s.WarningEnabled
+	logWriter.traceEnabled = s.TraceEnabled
+	logWriter.debugEnabled = s.DebugEnabled
+	logWriter.errorEnabled = s.ErrorEnabled
+	logWriter.fatalEnabled = s.FatalEnabled
 	if w != nil {
 		log.SetOutput(*w)
 		return
@@ -119,14 +119,14 @@ func GetState() LogWriterState {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	s := LogWriterState{
-		enabled:        logWriter.enabled,
-		locEnabled:     logWriter.locEnabled,
-		traceEnabled:   logWriter.traceEnabled,
-		infoEnabled:    logWriter.infoEnabled,
-		warningEnabled: logWriter.warningEnabled,
-		debugEnabled:   logWriter.debugEnabled,
-		errorEnabled:   logWriter.errorEnabled,
-		fatalEnabled:   logWriter.fatalEnabled,
+		Enabled:        logWriter.enabled,
+		LocEnabled:     logWriter.locEnabled,
+		TraceEnabled:   logWriter.traceEnabled,
+		InfoEnabled:    logWriter.infoEnabled,
+		WarningEnabled: logWriter.warningEnabled,
+		DebugEnabled:   logWriter.debugEnabled,
+		ErrorEnabled:   logWriter.errorEnabled,
+		FatalEnabled:   logWriter.fatalEnabled,
 	}
 	return s
 }
