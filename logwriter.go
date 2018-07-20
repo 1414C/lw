@@ -33,6 +33,24 @@ type LogWriter struct {
 	Logger
 }
 
+var LWEnabled bool
+var InfoEnabled bool
+var LocEnabled bool
+
+func Info(s string, i ...interface{}) {
+	if InfoEnabled {
+		m := fmt.Sprintf(s, i...)
+		if LocEnabled {
+			_, f, line, ok := runtime.Caller(1)
+			if ok {
+				log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				return
+			}
+		}
+		log.Println("INFO:", m)
+	}
+}
+
 // Enable the LogWriter globally
 func (l *LogWriter) Enable(withLoc bool) {
 	l.Enabled = true

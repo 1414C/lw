@@ -10,3 +10,5 @@
 - [ ] look at standard log formats
 - [ ] design to hookup easily to `https://goaccess.io`
 - [ ] consider an approach where message format can be specified (call location/line)
+
+Now update as 'static' implementation
