@@ -22,3 +22,4 @@ Private internal structure of enabled/disabled logging-types
 - DebugEnable(bool)
 - ErrorEnable(bool)
 - FatalEnable(bool)
+

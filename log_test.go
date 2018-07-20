@@ -5,10 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
-	// "fmt"
-	// "runtime"
 	"testing"
+	"time"
 )
 
 type TestSummariesTp struct {
@@ -51,15 +49,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestInfoEnabled(t *testing.T) {
-	l := LogWriter{}
-	l.InfoEnabled = true
+	Enable(false, nil)
+	InfoEnable(true)
 	var d time.Duration
 	var total time.Duration
 	warmup := time.Now()
 	log.Println(warmup)
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active info message with 2 vars took:", d)
 		total += d
@@ -69,14 +67,13 @@ func TestInfoEnabled(t *testing.T) {
 }
 
 func TestInfoWithLoc(t *testing.T) {
-	l := LogWriter{}
-	l.InfoEnabled = true
-	l.LocEnabled = true
+	Enable(true, nil)
+	InfoEnable(true)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active info message with 2 vars took:", d)
 		total += d
@@ -86,15 +83,15 @@ func TestInfoWithLoc(t *testing.T) {
 }
 
 func TestInfoDisabled(t *testing.T) {
-	l := LogWriter{}
-	l.InfoEnabled = false
+	Enable(false, nil)
+	InfoEnable(false)
 	var d time.Duration
 	var total time.Duration
 	warmup := time.Now()
 	log.Println(warmup)
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Info("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Disabled info message with 2 vars took:", d)
 		total += d
@@ -104,13 +101,13 @@ func TestInfoDisabled(t *testing.T) {
 }
 
 func TestTraceEnabled(t *testing.T) {
-	l := LogWriter{}
-	l.TraceEnabled = true
+	Enable(false, nil)
+	TraceEnable(true)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active trace message with 2 vars took:", d)
 		total += d
@@ -120,13 +117,13 @@ func TestTraceEnabled(t *testing.T) {
 }
 
 func TestTraceDisabled(t *testing.T) {
-	l := LogWriter{}
-	l.TraceEnabled = false
+	Enable(false, nil)
+	TraceEnable(false)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Disabled trace message with 2 vars took:", d)
 		total += d
@@ -136,13 +133,13 @@ func TestTraceDisabled(t *testing.T) {
 }
 
 func TestWarningEnabled(t *testing.T) {
-	l := LogWriter{}
-	l.WarningEnabled = true
+	Enable(false, nil)
+	WarningEnable(true)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active warning message with 2 vars took:", d)
 		total += d
@@ -152,13 +149,13 @@ func TestWarningEnabled(t *testing.T) {
 }
 
 func TestWarningDisabled(t *testing.T) {
-	l := LogWriter{}
-	l.WarningEnabled = false
+	Enable(false, nil)
+	WarningEnable(false)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("disabled warning message with 2 vars took:", d)
 		total += d
@@ -168,14 +165,13 @@ func TestWarningDisabled(t *testing.T) {
 }
 
 func TestWarningWithLoc(t *testing.T) {
-	l := LogWriter{}
-	l.WarningEnabled = true
-	l.LocEnabled = true
+	Enable(true, nil)
+	WarningEnable(true)
 	var d time.Duration
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		l.Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Warning("This is a WARNING test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active warning with location message with 2 vars took:", d)
 		total += d
