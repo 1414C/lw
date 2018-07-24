@@ -3,7 +3,6 @@ package lw
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -46,20 +45,20 @@ var logWriter LogWriter
 // but if a valid io.Writer is provided, it will be used instead.
 // Passing a nil value for io.Writer w will result in os.Stdout being
 // used.
-func Enable(withLoc bool, w *io.Writer) {
+func Enable(withLoc bool, w io.Writer) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	logWriter.enabled = true
 	logWriter.locEnabled = withLoc
 	if w != nil {
-		log.SetOutput(*w)
+		logWriter.writer = w
 		return
 	}
-	log.SetOutput(os.Stdout)
+	logWriter.writer = os.Stdout
 }
 
 // InitWithSettings configures lw as per the supplied parameters.
-func InitWithSettings(s LogWriterState, w *io.Writer) {
+func InitWithSettings(s LogWriterState, w io.Writer) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	logWriter.enabled = s.Enabled
@@ -71,10 +70,10 @@ func InitWithSettings(s LogWriterState, w *io.Writer) {
 	logWriter.errorEnabled = s.ErrorEnabled
 	logWriter.fatalEnabled = s.FatalEnabled
 	if w != nil {
-		log.SetOutput(*w)
+		logWriter.writer = w
 		return
 	}
-	log.SetOutput(os.Stdout)
+	logWriter.writer = os.Stdout
 }
 
 // Disable disables lw at the package-level, but leaves all current
@@ -93,7 +92,7 @@ func DisableAndReset() {
 	defer logWriter.mu.Unlock()
 	logWriter.enabled = false
 	logWriter.locEnabled = false
-	log.SetOutput(os.Stdout)
+	logWriter.writer = os.Stdout
 	logWriter.infoEnabled = false
 	logWriter.warningEnabled = false
 	logWriter.traceEnabled = false
@@ -105,18 +104,19 @@ func DisableAndReset() {
 // SetWriter uses the supplied writer to set the output of the
 // underlying log.  Be careful using this, as the Enable and
 // Disable* functions will override this setting.
-func SetWriter(w *io.Writer) {
-	// don't bother with mu here, as log does it
+func SetWriter(w io.Writer) {
+	logWriter.mu.Lock()
+	defer logWriter.mu.Unlock()
 	if w != nil {
-		log.SetOutput(*w)
+		logWriter.writer = w
 	}
-	log.SetOutput(os.Stdout)
+	logWriter.writer = os.Stdout
 }
 
 // GetState returns the current state of the lw settings.  Note
 // that this provides a snap-shot in time, as the settings may
 // be changed in another goroutine immediately following the
-// release of mutex.
+// release of the mutex.
 func GetState() LogWriterState {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
@@ -134,8 +134,8 @@ func GetState() LogWriterState {
 }
 
 // InfoEnable enables the creation and output of Info messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
-// value of the writer assigned to log.
+// will be output based on the state of the logWriter.Enabled flag and the
+// current value of the writer assigned to log.
 func InfoEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
@@ -143,7 +143,7 @@ func InfoEnable(a bool) {
 }
 
 // WarningEnable enables the creation and output of Warning messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
+// will be output based on the state of the logWriter.Enabled flag and the current
 // value of the writer assigned to log.
 func WarningEnable(a bool) {
 	logWriter.mu.Lock()
@@ -152,8 +152,8 @@ func WarningEnable(a bool) {
 }
 
 // TraceEnable enables the creation and output of Trace messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
-// value of the writer assigned to log.
+// will be output based on the state of the logWriter.Enabled flag and the
+// current value of the writer assigned to log.
 func TraceEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
@@ -161,8 +161,8 @@ func TraceEnable(a bool) {
 }
 
 // DebugEnable enables the creation and output of Debug messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
-// value of the writer assigned to log.
+// will be output based on the state of the logWriter.Enabled flag and the
+// current value of the writer assigned to log.
 func DebugEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
@@ -170,8 +170,8 @@ func DebugEnable(a bool) {
 }
 
 // ErrorEnable enables the creation and output of Error messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
-// value of the writer assigned to log.
+// will be output based on the state of the logWriter.Enabled flag and the
+// current value of the writer assigned to log.
 func ErrorEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
@@ -179,109 +179,126 @@ func ErrorEnable(a bool) {
 }
 
 // FatalEnable enables the creation and output of Fatal messages.  Messages
-// will be output based on the state of the logWriter.Enabled and the current
-// value of the writer assigned to log.
+// will be output based on the state of the logWriter.Enabled flag and the
+// current value of the writer assigned to log.
 func FatalEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	logWriter.fatalEnabled = a
 }
 
-// InfoWithFmt writes an Info message based on the current lw settings.
-func InfoWithFmt(s string, i ...interface{}) {
-	if logWriter.infoEnabled {
-		m := fmt.Sprintf(s, i...)
-		if logWriter.locEnabled {
-			_, f, line, ok := runtime.Caller(1)
-			if ok {
-				// fmt.Println(time.Now().String() + " INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
-				// os.Stdout.WriteString(time.Now().String() + " INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
-				io.WriteString(os.Stdout, time.Now().String()+" INFO: "+f+" line:"+strconv.Itoa(line)+" "+m)
-				return
-			}
-		}
-		log.Println("INFO:", m)
-	}
+// Console always writes to os.Stdout regardless of the lw.Enabled setting.
+func Console(s string, i ...interface{}) {
+	m := fmt.Sprintf(s, i...)
+	io.WriteString(os.Stdout, m+"\n")
+	return
 }
 
-// Info writes an Info message based on the current lw settings.
+// Info writes an Info message based on the current lw settings.  The method accepts a
+// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// lw.Info("This is a test %s with the number %d", "MESSAGE", 42)
 func Info(s string, i ...interface{}) {
 	if logWriter.infoEnabled {
 		m := fmt.Sprintf(s, i...)
 		if logWriter.locEnabled {
 			_, f, line, ok := runtime.Caller(1)
 			if ok {
-				log.Println("INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
 				return
 			}
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+m+"\n")
+			return
 		}
-		log.Println("INFO:", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+m+"\n")
 	}
 }
 
-// Trace writes a Trace log-entry
+// Trace writes a Trace message based on the current lw settings.  The method accepts a
+// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// lw.Trace("This is a test %s with the number %d", "MESSAGE", 42)
 func Trace(s string, i ...interface{}) {
 	if logWriter.traceEnabled {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("TRACE: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t TRACE: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
 			return
 		}
-		log.Println("TRACE: ", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t TRACE: "+m+"\n")
 	}
 }
 
-// Warning writes a Warning log-entry
+// Warning writes a Warning mesage based on the current lw settings.  The method accepts a
+// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// lw.Warning("This is a test %s with the number %d", "MESSAGE", 42)
 func Warning(s string, i ...interface{}) {
 	if logWriter.warningEnabled {
 		m := fmt.Sprintf(s, i...)
 		if logWriter.locEnabled {
 			_, f, line, ok := runtime.Caller(1)
 			if ok {
-				log.Println("WARNING: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
 				return
 			}
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+m+"\n")
+			return
 		}
-		log.Println("WARNING:", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+m+"\n")
 	}
 }
 
-// Debug writes a Debug log-entry
+// Debug writes a Debug message based on the current lw settings.  The method accepts a
+// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// lw.Debug("This is a test %s with the number %d", "MESSAGE", 42)
 func Debug(s string, i ...interface{}) {
 	if logWriter.debugEnabled {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("DEBUG: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t DEBUG: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
 			return
 		}
-		log.Println("DEBUG:", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t DEBUG: "+m+"\n")
 	}
 }
 
-// Error writes an Error log-entry
-func Error(s string, i ...interface{}) {
+// Error writes an Error message based on the current lw settings.  The method accepts
+// the standard golang error-type. Note that you do not need to pass the newline escape
+// code ("\n").
+// Usage Example:
+// lw.Error("This is a test %s with the number %d", "MESSAGE", 42)
+func Error(e error) {
 	if logWriter.errorEnabled {
-		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("ERROR: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
 			return
 		}
-		log.Println("ERROR:", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+e.Error()+"\n")
 	}
 }
 
-// Fatal writes a Fatal log-entry
+// Fatal writes a Fatal log-entry based on the current lw settings.  The method accepts a
+// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// lw.Fatal("This is a test %s with the number %d", "MESSAGE", 42)
 func Fatal(s string, i ...interface{}) {
 	if logWriter.fatalEnabled {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			log.Println("FATAL: " + f + " line:" + strconv.Itoa(line) + " " + m)
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
 			return
 		}
-		log.Println("FATAL:", m)
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+m+"\n")
 	}
 }

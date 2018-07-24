@@ -2,7 +2,7 @@ package lw
 
 import (
 	"fmt"
-	"io/ioutil"
+	// "io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -10,17 +10,16 @@ import (
 )
 
 type TestSummariesTp struct {
-	InfoEnabled        time.Duration
-	InfoWithFmtEnabled time.Duration
-	InfoDisabled       time.Duration
-	InfoWithLoc        time.Duration
-	TraceEnabled       time.Duration
-	TraceDisabled      time.Duration
-	WarningEnabled     time.Duration
-	WarningDisabled    time.Duration
-	WarningWithLoc     time.Duration
-	PrintfStdOut       time.Duration
-	PrintfNOP          time.Duration
+	Console         time.Duration
+	InfoEnabled     time.Duration
+	InfoDisabled    time.Duration
+	InfoWithLoc     time.Duration
+	TraceEnabled    time.Duration
+	TraceDisabled   time.Duration
+	WarningEnabled  time.Duration
+	WarningDisabled time.Duration
+	WarningWithLoc  time.Duration
+	PrintfStdOut    time.Duration
 }
 
 var TestSummaries TestSummariesTp
@@ -33,8 +32,8 @@ func TestMain(m *testing.M) {
 	// test summaries
 	fmt.Println()
 	fmt.Println("=======================================================================")
+	fmt.Printf("Console:\t\t\t%v\n", TestSummaries.Console)
 	fmt.Printf("InfoEnabled:\t\t\t%v\n", TestSummaries.InfoEnabled)
-	fmt.Printf("InfoWithFmtEnabled:\t\t%v\n", TestSummaries.InfoWithFmtEnabled)
 	fmt.Printf("InfoWithLoc:\t\t\t%v\n", TestSummaries.InfoWithLoc)
 	fmt.Printf("InfoDisabled:\t\t\t%v\n", TestSummaries.InfoDisabled)
 	fmt.Printf("TraceEnabled:\t\t\t%v\n", TestSummaries.TraceEnabled)
@@ -43,11 +42,24 @@ func TestMain(m *testing.M) {
 	fmt.Printf("WarningWithLoc:\t\t\t%v\n", TestSummaries.WarningWithLoc)
 	fmt.Printf("WarningDisabled:\t\t%v\n", TestSummaries.WarningDisabled)
 	fmt.Printf("PrintfStdOut output:\t\t%v\n", TestSummaries.PrintfStdOut)
-	fmt.Printf("PrintfNOP output:\t\t%v\n", TestSummaries.PrintfNOP)
 	fmt.Println("=======================================================================")
 	fmt.Println()
 
 	os.Exit(code)
+}
+
+func TestConsole(t *testing.T) {
+	var d time.Duration
+	var total time.Duration
+	for i := 0; i < 10; i++ {
+		start := time.Now()
+		Console("This is an console test with 2 vars. one: %v, two: %v", "var_1", 2)
+		d = time.Since(start)
+		log.Println("Active console message with 2 vars took:", d)
+		total += d
+	}
+	log.Println("Total log writing time:", total)
+	TestSummaries.Console = total
 }
 
 func TestInfoEnabled(t *testing.T) {
@@ -66,24 +78,6 @@ func TestInfoEnabled(t *testing.T) {
 	}
 	log.Println("Total log writing time:", total)
 	TestSummaries.InfoEnabled = total
-}
-
-func TestInfoFmtEnabled(t *testing.T) {
-	Enable(false, nil)
-	InfoEnable(true)
-	var d time.Duration
-	var total time.Duration
-	warmup := time.Now()
-	log.Println(warmup)
-	for i := 0; i < 10; i++ {
-		start := time.Now()
-		InfoWithFmt("This is an INFO test with 2 vars. one: %v, two: %v", "var_1", 2)
-		d = time.Since(start)
-		log.Println("Active info message with 2 vars took:", d)
-		total += d
-	}
-	log.Println("Total log writing time:", total)
-	TestSummaries.InfoWithFmtEnabled = total
 }
 
 func TestInfoWithLoc(t *testing.T) {
@@ -212,21 +206,4 @@ func TestLogPrintfStdout(t *testing.T) {
 	}
 	log.Println("Total log writing time:", total)
 	TestSummaries.PrintfStdOut = total
-}
-
-func TestLogPrintfNOP(t *testing.T) {
-	var d time.Duration
-	defer log.SetOutput(os.Stdout) // just in case
-	var total time.Duration
-	for i := 0; i < 10; i++ {
-		log.SetOutput(ioutil.Discard)
-		start := time.Now()
-		log.Printf("This is a log.Printf stdout test with 2 vars. one: %v, two: %v", "var_1", 2)
-		d = time.Since(start)
-		log.SetOutput(os.Stdout)
-		log.Println("log.Printf message with 2 vars took:", d)
-		total += d
-	}
-	log.Println("Total log writing time:", total)
-	TestSummaries.PrintfNOP = total
 }
