@@ -8,11 +8,13 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"time"
 )
 
 // LogWriter is a logging struct implementing Logger
 type LogWriter struct {
 	mu             sync.Mutex
+	writer         io.Writer
 	enabled        bool
 	locEnabled     bool
 	traceEnabled   bool
@@ -183,6 +185,23 @@ func FatalEnable(a bool) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	logWriter.fatalEnabled = a
+}
+
+// InfoWithFmt writes an Info message based on the current lw settings.
+func InfoWithFmt(s string, i ...interface{}) {
+	if logWriter.infoEnabled {
+		m := fmt.Sprintf(s, i...)
+		if logWriter.locEnabled {
+			_, f, line, ok := runtime.Caller(1)
+			if ok {
+				// fmt.Println(time.Now().String() + " INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				// os.Stdout.WriteString(time.Now().String() + " INFO: " + f + " line:" + strconv.Itoa(line) + " " + m)
+				io.WriteString(os.Stdout, time.Now().String()+" INFO: "+f+" line:"+strconv.Itoa(line)+" "+m)
+				return
+			}
+		}
+		log.Println("INFO:", m)
+	}
 }
 
 // Info writes an Info message based on the current lw settings.
