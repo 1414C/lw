@@ -21,7 +21,6 @@ type LogWriter struct {
 	warningEnabled bool
 	debugEnabled   bool
 	errorEnabled   bool
-	fatalEnabled   bool
 }
 
 // LogWriterState is used to return the current status/state
@@ -34,7 +33,6 @@ type LogWriterState struct {
 	WarningEnabled bool
 	DebugEnabled   bool
 	ErrorEnabled   bool
-	FatalEnabled   bool
 }
 
 var logWriter LogWriter
@@ -68,7 +66,6 @@ func InitWithSettings(s LogWriterState, w io.Writer) {
 	logWriter.traceEnabled = s.TraceEnabled
 	logWriter.debugEnabled = s.DebugEnabled
 	logWriter.errorEnabled = s.ErrorEnabled
-	logWriter.fatalEnabled = s.FatalEnabled
 	if w != nil {
 		logWriter.writer = w
 		return
@@ -98,7 +95,6 @@ func DisableAndReset() {
 	logWriter.traceEnabled = false
 	logWriter.debugEnabled = false
 	logWriter.errorEnabled = false
-	logWriter.fatalEnabled = false
 }
 
 // SetWriter uses the supplied writer to set the output of the
@@ -128,7 +124,6 @@ func GetState() LogWriterState {
 		WarningEnabled: logWriter.warningEnabled,
 		DebugEnabled:   logWriter.debugEnabled,
 		ErrorEnabled:   logWriter.errorEnabled,
-		FatalEnabled:   logWriter.fatalEnabled,
 	}
 	return s
 }
@@ -178,15 +173,6 @@ func ErrorEnable(a bool) {
 	logWriter.errorEnabled = a
 }
 
-// FatalEnable enables the creation and output of Fatal messages.  Messages
-// will be output based on the state of the logWriter.Enabled flag and the
-// current value of the writer assigned to log.
-func FatalEnable(a bool) {
-	logWriter.mu.Lock()
-	defer logWriter.mu.Unlock()
-	logWriter.fatalEnabled = a
-}
-
 // Console always writes to os.Stdout regardless of the lw.Enabled setting.
 func Console(s string, i ...interface{}) {
 	m := fmt.Sprintf(s, i...)
@@ -195,7 +181,7 @@ func Console(s string, i ...interface{}) {
 }
 
 // Info writes an Info message based on the current lw settings.  The method accepts a
-// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Printf-type formatted string and a list of operands to use in the verb-replacement.
 // Note that you do not need to pass the newline escape code ("\n").
 // Usage Example:
 // lw.Info("This is a test %s with the number %d", "MESSAGE", 42)
@@ -216,7 +202,7 @@ func Info(s string, i ...interface{}) {
 }
 
 // Trace writes a Trace message based on the current lw settings.  The method accepts a
-// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Printf-type formatted string and a list of operands to use in the verb-replacement.
 // Note that you do not need to pass the newline escape code ("\n").
 // Usage Example:
 // lw.Trace("This is a test %s with the number %d", "MESSAGE", 42)
@@ -233,7 +219,7 @@ func Trace(s string, i ...interface{}) {
 }
 
 // Warning writes a Warning mesage based on the current lw settings.  The method accepts a
-// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Printf-type formatted string and a list of operands to use in the verb-replacement.
 // Note that you do not need to pass the newline escape code ("\n").
 // Usage Example:
 // lw.Warning("This is a test %s with the number %d", "MESSAGE", 42)
@@ -254,7 +240,7 @@ func Warning(s string, i ...interface{}) {
 }
 
 // Debug writes a Debug message based on the current lw settings.  The method accepts a
-// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Printf-type formatted string and a list of operands to use in the verb-replacement.
 // Note that you do not need to pass the newline escape code ("\n").
 // Usage Example:
 // lw.Debug("This is a test %s with the number %d", "MESSAGE", 42)
@@ -286,19 +272,19 @@ func Error(e error) {
 	}
 }
 
-// Fatal writes a Fatal log-entry based on the current lw settings.  The method accepts a
-// Printf-type formatted string and a list of operands to use in the verb-replcement.
+// Fatal writes a Fatal log-entry based on the current lw settings and the terminates
+// the application via os.Exit(1).  The method accepts a printf-type formatted string
+// and a list of operands to use in the verb-replacement.
+// The Fatal message-type is always active irrespective of lw-settings.
 // Note that you do not need to pass the newline escape code ("\n").
 // Usage Example:
 // lw.Fatal("This is a test %s with the number %d", "MESSAGE", 42)
-func Fatal(s string, i ...interface{}) {
-	if logWriter.fatalEnabled {
-		m := fmt.Sprintf(s, i...)
-		_, f, line, ok := runtime.Caller(1)
-		if ok {
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
-			return
-		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+m+"\n")
+func Fatal(e error) {
+	_, f, line, ok := runtime.Caller(1)
+	if ok {
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+		os.Exit(1)
 	}
+	io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+e.Error()+"\n")
+	os.Exit(1)
 }
