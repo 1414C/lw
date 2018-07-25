@@ -260,7 +260,7 @@ func Debug(s string, i ...interface{}) {
 // the standard golang error-type. Note that you do not need to pass the newline escape
 // code ("\n").
 // Usage Example:
-// lw.Error("This is a test %s with the number %d", "MESSAGE", 42)
+// lw.Error(e)
 func Error(e error) {
 	if logWriter.errorEnabled {
 		_, f, line, ok := runtime.Caller(1)
@@ -269,6 +269,23 @@ func Error(e error) {
 			return
 		}
 		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+e.Error()+"\n")
+	}
+}
+
+// ErrorWithPrefixString writes an Error message based on the current lw settings.  The
+// method accepts the standard golang error-type and a prefix string for the error message.
+// Note that you do not need to pass the newline escape code ("\n").
+// Usage Example:
+// e error
+// lw.ErrorWithPrefixString("Auth Controller Create() got:", e)
+func ErrorWithPrefixString(s string, e error) {
+	if logWriter.errorEnabled {
+		_, f, line, ok := runtime.Caller(1)
+		if ok {
+			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+			return
+		}
+		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+e.Error()+"\n")
 	}
 }
 
