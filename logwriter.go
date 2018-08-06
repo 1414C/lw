@@ -21,6 +21,13 @@ type LogWriter struct {
 	warningEnabled bool
 	debugEnabled   bool
 	errorEnabled   bool
+	colorEnabled   bool
+	infoTxt        string
+	warnTxt        string
+	errorTxt       string
+	traceTxt       string
+	debugTxt       string
+	fatalTxt       string
 }
 
 // LogWriterState is used to return the current status/state
@@ -33,9 +40,28 @@ type LogWriterState struct {
 	WarningEnabled bool
 	DebugEnabled   bool
 	ErrorEnabled   bool
+	ColorEnabled   bool
 }
 
 var logWriter LogWriter
+
+func withColor(b bool) {
+	if b {
+		logWriter.infoTxt = "\x1b[32;1mINFO:\t\x1b[0m"
+		logWriter.warnTxt = "\x1b[38;5;11mWARNING:  \x1b[0m"
+		logWriter.errorTxt = "\x1b[38;5;9mERROR:\t\x1b[0m"
+		logWriter.traceTxt = "\x1b[38;5;13mTRACE:\t\x1b[0m"
+		logWriter.debugTxt = "\x1b[38;5;213mDEBUG:\t\x1b[0m"
+		logWriter.fatalTxt = "\x1b[38;5;9mFATAL:\t\x1b[0m"
+		return
+	}
+	logWriter.infoTxt = "INFO:\t"
+	logWriter.warnTxt = "WARNING:  "
+	logWriter.errorTxt = "ERROR:\t"
+	logWriter.traceTxt = "TRACE:\t"
+	logWriter.debugTxt = "DEBUG:\t"
+	logWriter.fatalTxt = "FATAL:\t"
+}
 
 // Enable enables lw at the package-level.  This does not have the
 // effect of generating log entries unless at least one of the logging
@@ -43,11 +69,13 @@ var logWriter LogWriter
 // but if a valid io.Writer is provided, it will be used instead.
 // Passing a nil value for io.Writer w will result in os.Stdout being
 // used.
-func Enable(withLoc bool, w io.Writer) {
+func Enable(withLoc bool, withCol bool, w io.Writer) {
 	logWriter.mu.Lock()
 	defer logWriter.mu.Unlock()
 	logWriter.enabled = true
 	logWriter.locEnabled = withLoc
+	logWriter.colorEnabled = withCol
+	withColor(logWriter.colorEnabled)
 	if w != nil {
 		logWriter.writer = w
 		return
@@ -66,6 +94,8 @@ func InitWithSettings(s LogWriterState, w io.Writer) {
 	logWriter.traceEnabled = s.TraceEnabled
 	logWriter.debugEnabled = s.DebugEnabled
 	logWriter.errorEnabled = s.ErrorEnabled
+	logWriter.colorEnabled = s.ColorEnabled
+	withColor(logWriter.colorEnabled)
 	if w != nil {
 		logWriter.writer = w
 		return
@@ -95,6 +125,8 @@ func DisableAndReset() {
 	logWriter.traceEnabled = false
 	logWriter.debugEnabled = false
 	logWriter.errorEnabled = false
+	logWriter.colorEnabled = false
+	withColor(logWriter.colorEnabled)
 }
 
 // SetWriter uses the supplied writer to set the output of the
@@ -124,6 +156,7 @@ func GetState() LogWriterState {
 		WarningEnabled: logWriter.warningEnabled,
 		DebugEnabled:   logWriter.debugEnabled,
 		ErrorEnabled:   logWriter.errorEnabled,
+		ColorEnabled:   logWriter.colorEnabled,
 	}
 	return s
 }
@@ -173,6 +206,14 @@ func ErrorEnable(a bool) {
 	logWriter.errorEnabled = a
 }
 
+// ColorEnable sets/unsets the coloring of the message type.
+func ColorEnable(c bool) {
+	logWriter.mu.Lock()
+	defer logWriter.mu.Unlock()
+	logWriter.colorEnabled = c
+	withColor(c)
+}
+
 // Console always writes to os.Stdout regardless of the lw.Enabled setting.
 func Console(s string, i ...interface{}) {
 	m := fmt.Sprintf(s, i...)
@@ -191,13 +232,13 @@ func Info(s string, i ...interface{}) {
 		if logWriter.locEnabled {
 			_, f, line, ok := runtime.Caller(1)
 			if ok {
-				io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
+				io.WriteString(logWriter.writer, logWriter.infoTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 				return
 			}
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+m+"\n")
+			io.WriteString(logWriter.writer, logWriter.infoTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t INFO: "+m+"\n")
+		io.WriteString(logWriter.writer, logWriter.infoTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 	}
 }
 
@@ -211,10 +252,10 @@ func Trace(s string, i ...interface{}) {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t TRACE: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
+			io.WriteString(logWriter.writer, logWriter.traceTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t TRACE: "+m+"\n")
+		io.WriteString(logWriter.writer, logWriter.traceTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 	}
 }
 
@@ -229,13 +270,13 @@ func Warning(s string, i ...interface{}) {
 		if logWriter.locEnabled {
 			_, f, line, ok := runtime.Caller(1)
 			if ok {
-				io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
+				io.WriteString(logWriter.writer, logWriter.warnTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 				return
 			}
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+m+"\n")
+			io.WriteString(logWriter.writer, logWriter.warnTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t WARNING: "+m+"\n")
+		io.WriteString(logWriter.writer, logWriter.warnTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 	}
 }
 
@@ -249,10 +290,11 @@ func Debug(s string, i ...interface{}) {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t DEBUG: "+f+" line:"+strconv.Itoa(line)+" "+m+"\n")
+			// io.WriteString(logWriter.writer, logWriter.debugTxt+time.Now().Format(time.RFC3339Nano)+"\t"+f+" line:"+strconv.Itoa(line)+"\t"+m+"\n")
+			io.WriteString(logWriter.writer, logWriter.debugTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t DEBUG: "+m+"\n")
+		io.WriteString(logWriter.writer, logWriter.debugTxt+time.Now().Format(time.RFC3339Nano)+"\t"+m+"\n")
 	}
 }
 
@@ -265,10 +307,11 @@ func Error(e error) {
 	if logWriter.errorEnabled {
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+			// io.WriteString(logWriter.writer, logWriter.errorTxt+time.Now().Format(time.RFC3339Nano)+"\t"+f+" line:"+strconv.Itoa(line)+"\t"+e.Error()+"\n")
+			io.WriteString(logWriter.writer, logWriter.errorTxt+time.Now().Format(time.RFC3339Nano)+"\t"+e.Error()+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+e.Error()+"\n")
+		io.WriteString(logWriter.writer, logWriter.errorTxt+time.Now().Format(time.RFC3339Nano)+"\t"+e.Error()+"\n")
 	}
 }
 
@@ -282,10 +325,12 @@ func ErrorWithPrefixString(s string, e error) {
 	if logWriter.errorEnabled {
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
-			io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+			// io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+			io.WriteString(logWriter.writer, logWriter.errorTxt+time.Now().Format(time.RFC3339Nano)+"\t"+s+" "+f+" line:"+strconv.Itoa(line)+"\t"+e.Error()+"\n")
 			return
 		}
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+e.Error()+"\n")
+		// io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t ERROR: "+s+" "+e.Error()+"\n")
+		io.WriteString(logWriter.writer, logWriter.errorTxt+time.Now().Format(time.RFC3339Nano)+"\t"+s+" "+e.Error()+"\n")
 	}
 }
 
@@ -299,9 +344,9 @@ func ErrorWithPrefixString(s string, e error) {
 func Fatal(e error) {
 	_, f, line, ok := runtime.Caller(1)
 	if ok {
-		io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+f+" line:"+strconv.Itoa(line)+" "+e.Error()+"\n")
+		io.WriteString(logWriter.writer, logWriter.fatalTxt+time.Now().Format(time.RFC3339Nano)+"\t"+e.Error()+"\t"+f+" line:"+strconv.Itoa(line)+"\n")
 		os.Exit(1)
 	}
-	io.WriteString(logWriter.writer, time.Now().Format(time.RFC3339Nano)+"\t FATAL: "+e.Error()+"\n")
+	io.WriteString(logWriter.writer, logWriter.fatalTxt+time.Now().Format(time.RFC3339Nano)+"\t"+e.Error()+"\n")
 	os.Exit(1)
 }
