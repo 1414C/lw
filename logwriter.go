@@ -227,6 +227,9 @@ func Console(s string, i ...interface{}) {
 // Usage Example:
 // lw.Info("This is a test %s with the number %d", "MESSAGE", 42)
 func Info(s string, i ...interface{}) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.infoEnabled {
 		m := fmt.Sprintf(s, i...)
 		if logWriter.locEnabled {
@@ -248,6 +251,9 @@ func Info(s string, i ...interface{}) {
 // Usage Example:
 // lw.Trace("This is a test %s with the number %d", "MESSAGE", 42)
 func Trace(s string, i ...interface{}) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.traceEnabled {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
@@ -265,6 +271,9 @@ func Trace(s string, i ...interface{}) {
 // Usage Example:
 // lw.Warning("This is a test %s with the number %d", "MESSAGE", 42)
 func Warning(s string, i ...interface{}) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.warningEnabled {
 		m := fmt.Sprintf(s, i...)
 		if logWriter.locEnabled {
@@ -286,6 +295,9 @@ func Warning(s string, i ...interface{}) {
 // Usage Example:
 // lw.Debug("This is a test %s with the number %d", "MESSAGE", 42)
 func Debug(s string, i ...interface{}) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.debugEnabled {
 		m := fmt.Sprintf(s, i...)
 		_, f, line, ok := runtime.Caller(1)
@@ -304,6 +316,9 @@ func Debug(s string, i ...interface{}) {
 // Usage Example:
 // lw.Error(e)
 func Error(e error) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.errorEnabled {
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
@@ -322,6 +337,9 @@ func Error(e error) {
 // e error
 // lw.ErrorWithPrefixString("Auth Controller Create() got:", e)
 func ErrorWithPrefixString(s string, e error) {
+	if !logWriter.enabled {
+		return
+	}
 	if logWriter.errorEnabled {
 		_, f, line, ok := runtime.Caller(1)
 		if ok {
