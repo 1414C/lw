@@ -53,7 +53,7 @@ func TestConsole(t *testing.T) {
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		Console("This is an console test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Console("This is a console test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active console message with 2 vars took:", d)
 		total += d
@@ -152,7 +152,7 @@ func TestTraceEnabled(t *testing.T) {
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Trace("This is a TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active trace message with 2 vars took:", d)
 		total += d
@@ -169,7 +169,7 @@ func TestTraceEnabledColor(t *testing.T) {
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Trace("This is a TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Active trace message with 2 vars took:", d)
 		total += d
@@ -186,7 +186,7 @@ func TestTraceDisabled(t *testing.T) {
 	var total time.Duration
 	for i := 0; i < 10; i++ {
 		start := time.Now()
-		Trace("This is an TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
+		Trace("This is a TRACE test with 2 vars. one: %v, two: %v", "var_1", 2)
 		d = time.Since(start)
 		log.Println("Disabled trace message with 2 vars took:", d)
 		total += d
