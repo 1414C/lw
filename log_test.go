@@ -2,7 +2,6 @@ package lw
 
 import (
 	"fmt"
-	// "io/ioutil"
 	"log"
 	"os"
 	"testing"
